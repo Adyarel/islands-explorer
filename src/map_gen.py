@@ -39,11 +39,11 @@ class GMap:
         if block_starting_pos.get_tuple() in self.map_blocks:
             return self.map_blocks[block_starting_pos]
         else:
-            self.map_blocks[block_starting_pos.get_tuple()] = MapBlock(block_starting_pos, self)
+            self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
             return self.map_blocks[block_starting_pos.get_tuple()]
 
 
-class MapBlock:
+class Chunk:
     """block of the gmap"""
     block_size = 16
 
@@ -55,8 +55,8 @@ class MapBlock:
         self.height_map = numpy.zeros((self.block_size, self.block_size), numpy.uint8)
         self.colored_map = numpy.zeros((self.block_size, self.block_size, 3), numpy.uint8)
 
-        for i in range(MapBlock.block_size):
-            for j in range(MapBlock.block_size):
+        for i in range(Chunk.block_size):
+            for j in range(Chunk.block_size):
                 new_i = i + starting_pos.y
                 new_j = j + starting_pos.x
 
