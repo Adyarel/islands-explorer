@@ -9,7 +9,7 @@ color_sand = [210, 180, 140]
 color_grass = [34, 139, 34]
 
 
-class GMap:
+class Map:
     """class to regroup the block of map """
 
     def __init__(self, sea_level, sand_height,
@@ -47,7 +47,7 @@ class Chunk:
     """block of the gmap"""
     block_size = 16
 
-    def __init__(self, starting_pos: Pos, gmap: GMap):
+    def __init__(self, starting_pos: Pos, gmap: Map):
         """generate terrain by block"""
         self.gmap = gmap
         self.starting_pos = starting_pos
