@@ -28,24 +28,34 @@ class Map:
         self.persistence = persistence
         self.lacunarity = lacunarity
 
-        if seed == 0:
+        self.seed = 0
+        """if seed == 0:
             self.seed = random.randint(0, 0x7FFFFFFF)
         else:
-            self.seed = seed
+            self.seed = seed"""
 
         self.map_blocks = {}
 
-    def get_map_block(self, block_starting_pos: Pos):
+    def get_map_block_colored(self, block_starting_pos: Pos) -> numpy.array:
         if block_starting_pos.get_tuple() in self.map_blocks:
-            return self.map_blocks[block_starting_pos]
+            return self.map_blocks[block_starting_pos.get_tuple()].colored_map
+
         else:
             self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
-            return self.map_blocks[block_starting_pos.get_tuple()]
+            return self.map_blocks[block_starting_pos.get_tuple()].colored_map
+
+    def get_color_by_height(self, height):
+        if height <= self.sea_level:
+            return color_sea
+        elif height <= self.sea_level + self.sand_height:
+            return color_sand
+        else:
+            return color_grass
 
 
 class Chunk:
     """block of the gmap"""
-    block_size = 16
+    block_size = 256
 
     def __init__(self, starting_pos: Pos, gmap: Map):
         """generate terrain by block"""
@@ -57,20 +67,17 @@ class Chunk:
 
         for i in range(Chunk.block_size):
             for j in range(Chunk.block_size):
-                new_i = i + starting_pos.y
-                new_j = j + starting_pos.x
+                new_i = i + starting_pos.x
+                new_j = j + starting_pos.y
 
-                self.height_map[i][j] = int(noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
+                self.height_map[i][j] = int((noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
                                                           self.gmap.seed,
                                                           octaves=self.gmap.octaves,
                                                           persistence=self.gmap.persistence,
                                                           lacunarity=self.gmap.lacunarity,
                                                           repeatx=10000000, repeaty=10000000, base=0)
-                                            + 1) * 128
+                                            + 1) * 128)
 
-                if self.height_map[i][j] <= self.gmap.sea_level:
-                    self.colored_map[i][j] = color_sea
-                elif self.height_map[i][j] <= self.gmap.sea_level + self.gmap.sand_height:
-                    self.colored_map[i][j] = color_sand
-                else:
-                    self.colored_map[i][j] = color_grass
+                self.colored_map[i][j] = self.gmap.get_color_by_height(self.height_map[i][j])
+
+
