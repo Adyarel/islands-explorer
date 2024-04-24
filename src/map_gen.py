@@ -44,6 +44,14 @@ class Map:
             self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
             return self.map_blocks[block_starting_pos.get_tuple()].colored_map
 
+    def get_height_pixel(self, pos: Pos) -> int:
+        starting_pos = Pos((pos.x // Chunk.block_size) * Chunk.block_size,
+                           (pos.y // Chunk.block_size) * Chunk.block_size)
+        if not starting_pos.get_tuple() in self.map_blocks:
+            self.map_blocks[starting_pos.get_tuple()] = Chunk(starting_pos, self)
+        chunk = self.map_blocks[starting_pos.get_tuple()]
+        return chunk.height_map[int(pos.x % Chunk.block_size), int(pos.y % Chunk.block_size)]
+
     def get_color_by_height(self, height):
         if height <= self.sea_level:
             return color_sea
@@ -79,5 +87,30 @@ class Chunk:
                                             + 1) * 128)
 
                 self.colored_map[i][j] = self.gmap.get_color_by_height(self.height_map[i][j])
+
+
+class SpawnPoint:
+    """donne un endroit de spawn pour les bateaux"""
+
+    def __init__(self, gmap: Map):
+        self.map = gmap
+        self.given_spawnpoints = []
+
+    def get_spawn_point_near(self, pos: Pos) -> Pos:
+        return Pos(-100,0)
+
+# todo
+        """obtention d'un point de spawn au hasard"""
+        finded = False
+        actual_pos = pos
+        while not finded:
+            c_actual_pos = actual_pos.x + 1j * actual_pos.y
+            c_actual_pos *= 1.1 + 0.1j
+            actual_pos = Pos(c_actual_pos.real, c_actual_pos.imag)
+            if self.map.get_height_pixel(actual_pos) < self.map.sea_level - self.map.sand_height:
+                finded = True
+        self.given_spawnpoints.append(actual_pos)
+        return actual_pos
+
 
 

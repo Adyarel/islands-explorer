@@ -98,6 +98,21 @@ class Pos:
     def get_tuple(self):
         return self.x, self.y
 
+    def __add__(self, other):
+        if isinstance(other, Pos):
+            return Pos(self.x + other.x, self.y + other.y)
+        else:
+            raise TypeError(str(other) + " must be the same type as " + str(self.__class__))
+
+    def __sub__(self, other):
+        if isinstance(other, Pos):
+            return Pos(self.x - other.x, self.y - other.y)
+        else:
+            raise TypeError(str(other) + " must be the same type as " + str(self.__class__))
+
+    def __copy__(self):
+        return Pos(self.x, self.y)
+
 
 class Dot:
     """Point mobile en mécanique classique"""

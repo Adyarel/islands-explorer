@@ -1,10 +1,9 @@
-import datetime
 import time
-
 import numpy
 import pygame
+from src.player import Player
 from src.map_gen import *
-from src.physics import Pos
+from src.physics import Pos, Speed
 
 
 class Game:
@@ -19,19 +18,40 @@ class Game:
         pygame.display.set_icon(pygame.image.load("assets/icon.png"))
 
         # --- Map ---
-        self.map = Map(128, 8)
+        self.map = Map(135, 8)
 
         # --- Camera ---
         self.camera_pos = Pos(0, 0)
         self.camera_moving_speed = 50  # pixels /s
 
-        # --- inputs ---d
+        # --- inputs ---
         self.key_pressed = {pygame.K_z: False,
                             pygame.K_q: False,
                             pygame.K_s: False,
-                            pygame.K_d: False}
+                            pygame.K_d: False,
+                            pygame.K_o: False,
+                            pygame.K_k: False,
+                            pygame.K_l: False,
+                            pygame.K_m: False,
+                            }
 
     def run(self):
+
+        # --- boats ---
+        spawnpoints = SpawnPoint(self.map)
+
+        player = Player(self.screen, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
+                             mass=10, max_power=2000, boat_image=Player.boat_1_image)
+
+        player_group = pygame.sprite.Group()
+        enemy_group = pygame.sprite.Group()
+        bullet_group = pygame.sprite.Group()
+
+        player_group.add(player)
+
+        # --- start game ---
+
+        self.camera_pos = player.dot.pos - Pos(self.screen_size[0] / 2, self.screen_size[1] / 2)
 
         last_frame = 0
 
@@ -45,8 +65,11 @@ class Game:
             # --- Update map ---
 
             self.display_map()
+            for player in player_group:
+                player.run(time_step, self.map, self.camera_pos)
 
             # print fps
+
             font = pygame.font.Font(None, 24)
             fps_value = 0
             if time_step != 0:
@@ -56,15 +79,30 @@ class Game:
 
             # --- Move cam ---
 
-            if self.key_pressed[pygame.K_z]:
+            if self.key_pressed[pygame.K_o]:
                 self.camera_pos.y -= self.camera_moving_speed * time_step
-            elif self.key_pressed[pygame.K_q]:
+            if self.key_pressed[pygame.K_k]:
                 self.camera_pos.x -= self.camera_moving_speed * time_step
-            elif self.key_pressed[pygame.K_s]:
+            if self.key_pressed[pygame.K_l]:
                 self.camera_pos.y += self.camera_moving_speed * time_step
-            elif self.key_pressed[pygame.K_d]:
+            if self.key_pressed[pygame.K_m]:
                 self.camera_pos.x += self.camera_moving_speed * time_step
-            print(self.camera_pos)
+            print("cam_pos :", self.camera_pos)
+
+            # --- Move boat ---
+
+            if self.key_pressed[pygame.K_z]:
+                player.set_engine_power(player.max_power)
+            if self.key_pressed[pygame.K_s]:
+                player.set_engine_power(-player.max_power)
+            if (not self.key_pressed[pygame.K_z]) and (not self.key_pressed[pygame.K_q]):
+                player.set_engine_power(0)
+
+            if self.key_pressed[pygame.K_q]:
+                player.rotate(-1, time_step, self.map)
+            if self.key_pressed[pygame.K_d]:
+                player.rotate(1, time_step, self.map)
+            print("boat_pos", player.dot.pos)
 
             # --- Apply update on screen ---
 
