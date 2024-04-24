@@ -93,9 +93,7 @@ class Pos:
         self.y = y_pos
 
     def __str__(self):
-        return str(self.__class__) + ": \n" \
-               + "\tx= " + str(self.x) + "\n" \
-               + "\ty= " + str(self.y)
+        return "x= " + str(self.x) + "\ty= " + str(self.y)
 
     def get_tuple(self):
         return self.x, self.y
