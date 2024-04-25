@@ -88,14 +88,14 @@ class Game:
 
             # --- Move cam ---
 
-            if self.key_pressed[pygame.K_o]:
-                self.camera_pos.y -= self.camera_moving_speed * time_step
-            if self.key_pressed[pygame.K_k]:
-                self.camera_pos.x -= self.camera_moving_speed * time_step
-            if self.key_pressed[pygame.K_l]:
-                self.camera_pos.y += self.camera_moving_speed * time_step
-            if self.key_pressed[pygame.K_m]:
-                self.camera_pos.x += self.camera_moving_speed * time_step
+            if player.dot.pos.x - self.camera_pos.x < self.screen_size[0] * 13/32:
+                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 13/32
+            elif player.dot.pos.x - self.camera_pos.x > self.screen_size[0] * 19/32:
+                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 19/32
+            if player.dot.pos.y - self.camera_pos.y < self.screen_size[1] * 7/18:
+                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 7/18
+            elif player.dot.pos.y - self.camera_pos.y > self.screen_size[1] * 11/18:
+                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 11/18
 
             # --- Move boat ---
 
@@ -105,7 +105,6 @@ class Game:
                 player.set_engine_power(-player.max_power)
             else:
                 player.set_engine_power(0)
-            print(player.engine_power)
 
             if self.key_pressed[pygame.K_q]:
                 player.rotate(-1, time_step, self.map)
