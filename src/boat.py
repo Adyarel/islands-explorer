@@ -34,6 +34,7 @@ class Boat(pygame.sprite.Sprite):
         self.image = self.base_image
         self.rect = self.image.get_rect()
         self.rect.center = (self.dot.pos.x, self.dot.pos.y)
+        self.mask = pygame.mask.from_surface(self.image)
 
         # game's mechanics related
         self.max_health = 100

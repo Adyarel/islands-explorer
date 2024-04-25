@@ -8,6 +8,9 @@ color_sea = [65, 105, 225]
 color_sand = [210, 180, 140]
 color_grass = [34, 139, 34]
 
+mask_color_transparent = [0, 0, 255, 0]
+mask_color_opaque = [0, 255, 0, 255]
+
 
 class Map:
     """class to regroup the block of map """
@@ -37,13 +40,15 @@ class Map:
         self.map_blocks = {}
 
     def get_map_block_colored(self, block_starting_pos: Pos) -> numpy.array:
-        if block_starting_pos.get_tuple() in self.map_blocks:
-            return self.map_blocks[block_starting_pos.get_tuple()].colored_map
-
-        else:
+        if not block_starting_pos.get_tuple() in self.map_blocks:
             self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
-            return self.map_blocks[block_starting_pos.get_tuple()].colored_map
+        return self.map_blocks[block_starting_pos.get_tuple()].colored_map
 
+    def get_map_block_masked(self, block_starting_pos: Pos) -> numpy.array:
+        if not block_starting_pos.get_tuple() in self.map_blocks:
+            self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
+        return self.map_blocks[block_starting_pos.get_tuple()].mask_map
+    
     def get_height_pixel(self, pos: Pos) -> int:
         starting_pos = Pos((pos.x // Chunk.block_size) * Chunk.block_size,
                            (pos.y // Chunk.block_size) * Chunk.block_size)
@@ -60,6 +65,12 @@ class Map:
         else:
             return color_grass
 
+    def get_masked_by_height(self, height):
+        if height < (self.sea_level + self.sand_height):
+            return mask_color_transparent
+        else:
+            return mask_color_opaque
+
 
 class Chunk:
     """block of the gmap"""
@@ -72,21 +83,24 @@ class Chunk:
 
         self.height_map = numpy.zeros((self.block_size, self.block_size), numpy.uint8)
         self.colored_map = numpy.zeros((self.block_size, self.block_size, 3), numpy.uint8)
+        self.mask_map = numpy.zeros((self.block_size, self.block_size, 4), numpy.uint8)
 
         for i in range(Chunk.block_size):
             for j in range(Chunk.block_size):
                 new_i = i + starting_pos.x
                 new_j = j + starting_pos.y
 
-                self.height_map[i][j] = int((noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
-                                                          self.gmap.seed,
-                                                          octaves=self.gmap.octaves,
-                                                          persistence=self.gmap.persistence,
-                                                          lacunarity=self.gmap.lacunarity,
-                                                          repeatx=10000000, repeaty=10000000, base=0)
-                                            + 1) * 128)
+                height = int((noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
+                                            self.gmap.seed,
+                                            octaves=self.gmap.octaves,
+                                            persistence=self.gmap.persistence,
+                                            lacunarity=self.gmap.lacunarity,
+                                            repeatx=10000000, repeaty=10000000, base=0)
+                              + 1) * 128)
 
-                self.colored_map[i][j] = self.gmap.get_color_by_height(self.height_map[i][j])
+                self.height_map[i][j] = height
+                self.colored_map[i][j] = self.gmap.get_color_by_height(height)
+                self.mask_map[i][j] = self.gmap.get_masked_by_height(height)
 
 
 class SpawnPoint:
@@ -97,9 +111,9 @@ class SpawnPoint:
         self.given_spawnpoints = []
 
     def get_spawn_point_near(self, pos: Pos) -> Pos:
-        return Pos(-100,0)
+        return Pos(-100, 0)
 
-# todo
+        # todo
         """obtention d'un point de spawn au hasard"""
         finded = False
         actual_pos = pos
@@ -111,6 +125,3 @@ class SpawnPoint:
                 finded = True
         self.given_spawnpoints.append(actual_pos)
         return actual_pos
-
-
-
