@@ -1,5 +1,4 @@
 import time
-import numpy
 import pygame
 
 from src.boat import Boat
@@ -25,18 +24,12 @@ class Game:
 
         # --- Camera ---
         self.camera_pos = Pos(0, 0)
-        self.camera_moving_speed = 50  # pixels /s
 
         # --- inputs ---
         self.key_pressed = {pygame.K_z: False,
                             pygame.K_q: False,
                             pygame.K_s: False,
-                            pygame.K_d: False,
-                            pygame.K_o: False,
-                            pygame.K_k: False,
-                            pygame.K_l: False,
-                            pygame.K_m: False,
-                            }
+                            pygame.K_d: False}
 
     def run(self):
 
@@ -77,7 +70,8 @@ class Game:
                 x.run(time_step, self.map, self.camera_pos)
             for x in enemy_group:
                 x.run(time_step, self.map, self.camera_pos)
-            # print fps
+
+            # --- print fps ---
 
             font = pygame.font.Font(None, 24)
             fps_value = 0
@@ -185,9 +179,9 @@ class Game:
         # finally, reduce to the screen size
 
         colormap = bigcolormap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                   cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                               cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
         maskmap = bigmaskmap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                  cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                             cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
 
         image = pygame.surfarray.make_surface(colormap)
         mask = pygame.mask.from_surface(make_surface_rgba(maskmap))
@@ -197,7 +191,8 @@ class Game:
 
 class BackGround(pygame.sprite.Sprite):
 
-    def __init__(self, image, mask, rect):
+    def __init__(self, image, mask, rect, *groups):
+        super().__init__(*groups)
         self.image = image
         self.mask = mask
         self.rect = rect

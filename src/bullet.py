@@ -23,8 +23,6 @@ class Bullet(pygame.sprite.Sprite):
         self.dot.run(Force(0, 0), time_step)
         self.rect.center = (self.dot.pos.x - camera_pos.x, self.dot.pos.y - camera_pos.y)
 
-
-
     def __str__(self):
         return str(self.__class__) + ": \n" \
                + "\tx_speed= " + str(self.dot.speed.x) + "\n" \
