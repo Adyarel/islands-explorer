@@ -31,11 +31,10 @@ class Map:
         self.persistence = persistence
         self.lacunarity = lacunarity
 
-        self.seed = 0
-        """if seed == 0:
+        if seed == 0:
             self.seed = random.randint(0, 0x7FFFFFFF)
         else:
-            self.seed = seed"""
+            self.seed = seed
 
         self.map_blocks = {}
 
@@ -48,7 +47,7 @@ class Map:
         if not block_starting_pos.get_tuple() in self.map_blocks:
             self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
         return self.map_blocks[block_starting_pos.get_tuple()].mask_map
-    
+
     def get_height_pixel(self, pos: Pos) -> int:
         starting_pos = Pos((pos.x // Chunk.block_size) * Chunk.block_size,
                            (pos.y // Chunk.block_size) * Chunk.block_size)
@@ -111,15 +110,12 @@ class SpawnPoint:
         self.given_spawnpoints = []
 
     def get_spawn_point_near(self, pos: Pos) -> Pos:
-        return Pos(-100, 0)
-
-        # todo
         """obtention d'un point de spawn au hasard"""
         finded = False
-        actual_pos = pos
-        while not finded:
+        actual_pos = pos - Pos(100, 0)
+        while not finded or actual_pos in self.given_spawnpoints:
             c_actual_pos = actual_pos.x + 1j * actual_pos.y
-            c_actual_pos *= 1.1 + 0.1j
+            c_actual_pos *= 1 + 0.5j
             actual_pos = Pos(c_actual_pos.real, c_actual_pos.imag)
             if self.map.get_height_pixel(actual_pos) < self.map.sea_level - self.map.sand_height:
                 finded = True

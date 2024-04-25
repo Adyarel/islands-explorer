@@ -113,6 +113,15 @@ class Pos:
     def __copy__(self):
         return Pos(self.x, self.y)
 
+    def __eq__(self, other):
+        if not isinstance(other, Pos):
+            return False
+        if self.x != other.x:
+            return False
+        if self.y != other.y:
+            return False
+        return True
+
 
 class Dot:
     """Point mobile en mécanique classique"""

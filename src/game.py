@@ -21,6 +21,7 @@ class Game:
 
         # --- Map ---
         self.map = Map(135, 8)
+        print("seed:", self.map.seed)
 
         # --- Camera ---
         self.camera_pos = Pos(0, 0)
@@ -39,8 +40,12 @@ class Game:
         player = Player(self.screen, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                         mass=10, max_power=2000, boat_image=Player.boat_1_image)
 
-        enemy = Boat(self.screen, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
+        enemy = Boat(self.screen, spawnpoints.get_spawn_point_near(Pos(0,0)), Speed(0, 0),
                      mass=10, max_power=2000, boat_image=Player.boat_2_image)
+
+        print("given_spawnpoints:")
+        for x in spawnpoints.given_spawnpoints:
+            print("\t", x)
 
         player_group = pygame.sprite.Group()
         enemy_group = pygame.sprite.Group()
