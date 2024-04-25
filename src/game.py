@@ -99,12 +99,13 @@ class Game:
 
             # --- Move boat ---
 
-            if self.key_pressed[pygame.K_z]:
+            if self.key_pressed[pygame.K_z] and not self.key_pressed[pygame.K_s]:
                 player.set_engine_power(player.max_power)
-            if self.key_pressed[pygame.K_s]:
+            elif self.key_pressed[pygame.K_s] and not self.key_pressed[pygame.K_z]:
                 player.set_engine_power(-player.max_power)
-            if not (self.key_pressed[pygame.K_z] or self.key_pressed[pygame.K_q]):
+            else:
                 player.set_engine_power(0)
+            print(player.engine_power)
 
             if self.key_pressed[pygame.K_q]:
                 player.rotate(-1, time_step, self.map)

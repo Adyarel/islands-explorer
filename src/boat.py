@@ -61,12 +61,8 @@ class Boat(pygame.sprite.Sprite):
 
     def set_engine_power(self, power):
         """régulateur sur la puissance afin de ne pas dépasser le max"""
-        if power <= -self.max_power:
-            self.engine_power = -self.max_power
-        elif power <= self.max_power:
+        if - self.max_power <= power <= self.max_power:
             self.engine_power = power
-        else:
-            self.engine_power = self.max_power
 
     def run(self, time_step, map_data: Map, camera_pos: Pos):
         """opérations à effectuer à chaque tick"""
