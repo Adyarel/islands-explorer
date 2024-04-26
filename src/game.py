@@ -11,15 +11,22 @@ from src.physics import Pos, Speed
 class Game:
     def __init__(self, screen_size: tuple):
 
+        print("init pygame")
         pygame.init()
 
+        print("starting time measurement ...")
+        self.lastframe = time.time()
+        self.alreadystart = False
+
         # --- screen ---
+        print("init screen")
         self.screen_size = screen_size
         self.screen = pygame.display.set_mode(self.screen_size)
         pygame.display.set_caption("Island Explorer", "island-explorer-icon")
         pygame.display.set_icon(pygame.image.load("assets/icon.png"))
 
         # --- Map ---
+        print("init map")
         self.map = Map(135, 8)
         print("seed:", self.map.seed)
 
@@ -33,6 +40,8 @@ class Game:
                             pygame.K_d: False}
 
     def run(self):
+
+        print("init game")
 
         # --- boats ---
         spawnpoints = SpawnPoint(self.map)
@@ -150,6 +159,12 @@ class Game:
                     if event.button == pygame.BUTTON_RIGHT:
                         bullet_group.add(player.fire(False))
 
+            # --- print time for first frame ---
+            if not self.alreadystart:
+                print("starting time:", time.time() - self.lastframe)
+                self.alreadystart = True
+
+        print("quit game")
         pygame.quit()
 
     def get_map_bg(self):
