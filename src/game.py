@@ -11,11 +11,12 @@ from src.physics import Pos, Speed
 class Game:
     def __init__(self, screen_size: tuple):
 
-        print("init pygame")
-        pygame.init()
-
-        print("starting time measurement ...")
-        self.lastframe = time.time()
+        self.lasttime = time.time()
+        print("init pygame ... ")
+        pygame.display.init()
+        pygame.font.init()
+        print("pygame initialized in", time.time() - self.lasttime, "s")
+        self.lasttime = time.time()
         self.alreadystart = False
 
         # --- screen ---
@@ -161,7 +162,7 @@ class Game:
 
             # --- print time for first frame ---
             if not self.alreadystart:
-                print("starting time:", time.time() - self.lastframe)
+                print("first frame in", time.time() - self.lasttime, "s")
                 self.alreadystart = True
 
         print("quit game")
