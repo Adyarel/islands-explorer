@@ -1,4 +1,6 @@
 import random
+import time
+
 import noise
 import numpy
 
@@ -8,6 +10,7 @@ color_deep_sea = [16, 56, 179]
 color_sea = [65, 105, 225]
 color_sand = [210, 180, 140]
 color_grass = [34, 139, 34]
+color_dirt = [118, 88, 67]
 
 mask_color_transparent = [0, 0, 255, 0]
 mask_color_opaque = [0, 255, 0, 255]
@@ -17,7 +20,6 @@ class Map:
     """class to regroup the block of map """
 
     def __init__(self, sea_level, sand_level,
-                 scale=500, octaves=4, persistence=0.6, lacunarity=2.0,
                  seed=0):
         """scale : niveau de zoom, 100 dézoomé, 500 zoomé
            octave : lissage fin de la carte, 4 très lisse, 10 dentelé
@@ -27,15 +29,20 @@ class Map:
         self.deepsea_level = int(sea_level * 11 / 13)
         self.sea_level = sea_level
         self.sand_level = sand_level
-        self.grass_level = int(self.sand_level * 13 / 11)
+        self.grass_level = int(self.sand_level * 27 / 23)
+
+        if seed == 0:
+            self.seed = time.time()
+        else:
+            self.seed = seed
 
         self.colors_by_height = numpy.zeros((256, 3), dtype=numpy.uint8)
         self.create_colors()
 
-        self.scale = scale
-        self.octaves = octaves
-        self.persistence = persistence
-        self.lacunarity = lacunarity
+        self.scale = 500
+        self.octaves = 4
+        self.persistence = 0.6
+        self.lacunarity = 2.0
 
         if seed == 0:
             self.seed = random.randint(0, 0x7FFFFFFF)
@@ -45,27 +52,51 @@ class Map:
         self.map_blocks = {}
 
     def create_colors(self):
+        # couleur unie pour les profondeurs
         for i in range(0, self.deepsea_level):
             self.colors_by_height[i] = color_deep_sea
+
+        # couleur qui change graduellement proches des côtes
+        color = [0, 0, 0]
+        a = self.deepsea_level
+        b = self.deepsea_level + 1 / 2 * (self.sea_level - self.deepsea_level)
+        c = self.sea_level
+        fa = color_deep_sea
+        fb = [0, 0, 0]
+        for i in range(3):
+            fb[i] = color_deep_sea[i] + 1 / 2 * (color_sea[i] - color_deep_sea[i])
+        fc = color_sea
         for i in range(self.deepsea_level, self.sea_level):
-            color = [0, 0, 0]
-            a = self.deepsea_level
-            b = self.deepsea_level + 1 / 2 * (self.sea_level - self.deepsea_level)
-            c = self.sea_level
-            fa = color_deep_sea
-            fb = [0, 0, 0]
-            for j in range(3):
-                fb[j] = color_deep_sea[j] + 1 / 3 * (color_sea[j] - color_deep_sea[j])
-            fc = color_sea
             for j in range(3):
                 color[j] = (i - b) * (i - c) / ((a - b) * (a - c)) * fa[j] + \
                            (i - a) * (i - c) / ((b - a) * (b - c)) * fb[j] + \
                            (i - a) * (i - b) / ((c - a) * (c - b)) * fc[j]
             self.colors_by_height[i] = color
+
+        # couleur unie pour la plage
         for i in range(self.sea_level, self.sand_level):
             self.colors_by_height[i] = color_sand
-        for i in range(self.sand_level, 256):
-            self.colors_by_height[i] = color_grass
+
+        # couleur qui change graduellement pour les collines
+        color = [0, 0, 0]
+        a = self.sand_level
+        b = self.sand_level + 1 / 2 * (self.grass_level - self.sand_level)
+        c = self.grass_level
+        fa = color_grass
+        fb = [0, 0, 0]
+        for i in range(3):
+            fb[i] = color_grass[i] + 1 / 2 * (color_dirt[i] - color_grass[i])
+        fc = color_dirt
+        for i in range(self.sand_level, self.grass_level):
+            for j in range(3):
+                color[j] = (i - b) * (i - c) / ((a - b) * (a - c)) * fa[j] + \
+                           (i - a) * (i - c) / ((b - a) * (b - c)) * fb[j] + \
+                           (i - a) * (i - b) / ((c - a) * (c - b)) * fc[j]
+            self.colors_by_height[i] = color
+
+        # couleur unie pour les montagnes
+        for i in range(self.grass_level, 256):
+            self.colors_by_height[i] = color_dirt
 
     # --- full chunk related ---
 
@@ -89,14 +120,6 @@ class Map:
         return chunk.height_map[int(pos.x % Chunk.block_size), int(pos.y % Chunk.block_size)]
 
     def get_color_by_height(self, height):
-        if height <= self.sea_level:
-            return color_sea
-        elif height <= self.sand_level:
-            return color_sand
-        else:
-            return color_grass
-
-    def get_color_by_height2(self, height):
         return self.colors_by_height[height]
 
     def get_masked_by_height(self, height):
@@ -107,6 +130,7 @@ class Map:
 
 
 demult = 1
+identity = numpy.ones((demult, demult), dtype=numpy.uint8)
 
 
 class Chunk:
@@ -125,65 +149,36 @@ class Chunk:
 
     def generate_terrain(self):
 
+        for i in range(0, Chunk.block_size, demult):
+            for j in range(0, Chunk.block_size, demult):
+                new_i = i + self.starting_pos.x
+                new_j = j + self.starting_pos.y
+
+                height = 0.8 * noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
+                                             self.gmap.seed,
+                                             octaves=self.gmap.octaves,
+                                             persistence=self.gmap.persistence,
+                                             lacunarity=self.gmap.lacunarity,
+                                             repeatx=10000000, repeaty=10000000, base=0)
+                height += 0.2 * noise.pnoise3(new_i * 2 / self.gmap.scale, new_j * 2 / self.gmap.scale,
+                                              self.gmap.seed,
+                                              octaves=self.gmap.octaves + 4,
+                                              persistence=self.gmap.persistence,
+                                              lacunarity=self.gmap.lacunarity,
+                                              repeatx=10000000, repeaty=10000000, base=0)
+
+                self.height_map[i: i + demult, j: j + demult] = int((height + 1) * 128) * identity
         for i in range(Chunk.block_size):
             for j in range(Chunk.block_size):
-                new_i = i + self.starting_pos.x
-                new_j = j + self.starting_pos.y
-
-                height = int((noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
-                                            self.gmap.seed,
-                                            octaves=self.gmap.octaves,
-                                            persistence=self.gmap.persistence,
-                                            lacunarity=self.gmap.lacunarity,
-                                            repeatx=10000000, repeaty=10000000, base=0)
-                              + 1) * 128)
-
-                self.height_map[i][j] = height
-                self.colored_map[i][j] = self.gmap.get_color_by_height2(height)
-                self.mask_map[i][j] = self.gmap.get_masked_by_height(height)
-        print("Chunk ", self.starting_pos, ": min moy max")
+                self.colored_map[i, j] = self.gmap.get_color_by_height(self.height_map[i, j])
+                self.mask_map[i, j] = self.gmap.get_masked_by_height(self.height_map[i, j])
+        """print("Chunk ", self.starting_pos, ": min moy max")
         print(numpy.min(self.height_map))
         print(numpy.sum(self.height_map) / Chunk.block_size ** 2)
-        print(numpy.max(self.height_map))
+        print(numpy.max(self.height_map))"""
 
-    def generate_terrain2(self):
-
-        for i in range(Chunk.block_size, demult):
-            for j in range(Chunk.block_size, demult):
-                new_i = i + self.starting_pos.x
-                new_j = j + self.starting_pos.y
-
-                height = int((noise.pnoise3(new_i / self.gmap.scale, new_j / self.gmap.scale,
-                                            self.gmap.seed,
-                                            octaves=self.gmap.octaves,
-                                            persistence=self.gmap.persistence,
-                                            lacunarity=self.gmap.lacunarity,
-                                            repeatx=10000000, repeaty=10000000, base=0)
-                              + 1) * 128)
-
-                self.height_map[i: i + demult][j: j + demult] = height * numpy.ones((demult, demult), dtype=numpy.uint8)
-        print("Chunk ", self.starting_pos, ": min moy max")
-        print(numpy.min(self.height_map))
-        print(numpy.sum(self.height_map) / Chunk.block_size ** 2)
-        print(numpy.max(self.height_map))
-
-        """for i in range(Chunk.block_size):
-            for j in range(Chunk.block_size):
-                new_i = i + self.starting_pos.x
-                new_j = j + self.starting_pos.y
-                height = int((noise.pnoise3(new_i * demult / self.gmap.scale, new_j * demult / self.gmap.scale,
-                                            self.gmap.seed,
-                                            octaves=self.gmap.octaves,
-                                            persistence=self.gmap.persistence,
-                                            lacunarity=self.gmap.lacunarity,
-                                            repeatx=10000000, repeaty=10000000, base=0)
-                              + 1) * 128 / demult)
-                self.height_map[i][j] += height"""
-
-        for i in range(Chunk.block_size):
-            for j in range(Chunk.block_size):
-                self.colored_map[i][j] = self.gmap.get_color_by_height2(self.height_map[i][j])
-                self.mask_map[i][j] = self.gmap.get_masked_by_height(self.height_map[i][j])
+    def __str__(self):
+        return "Chunk: " + str(self.starting_pos)
 
 
 class SpawnPoint:
