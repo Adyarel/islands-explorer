@@ -28,7 +28,7 @@ class Game:
 
         # --- Map ---
         print("init map")
-        self.map = Map(135, 8)
+        self.map = Map(135, 141)
         print("seed:", self.map.seed)
 
         # --- Camera ---

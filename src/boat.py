@@ -94,7 +94,7 @@ class Boat(pygame.sprite.Sprite):
             self.dot.speed.y = 0
             return Force(0, 0)
 
-        if height_level >= map_data.sea_level + map_data.sand_height:
+        if height_level >= map_data.sand_level:
             self.dot.speed.x *= 0.5
             self.dot.speed.y *= 0.5
             return Force(0, 0)
