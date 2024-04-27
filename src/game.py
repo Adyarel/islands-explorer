@@ -1,4 +1,4 @@
-import time
+from time import time as t
 import pygame
 
 from src.boat import Boat
@@ -11,12 +11,12 @@ from src.physics import Pos, Speed
 class Game:
     def __init__(self, screen_size: tuple):
 
-        self.lasttime = time.time()
+        self.lasttime = t()
         print("init pygame ... ")
         pygame.display.init()
         pygame.font.init()
-        print("pygame initialized in", time.time() - self.lasttime, "s")
-        self.lasttime = time.time()
+        print("pygame initialized in", t() - self.lasttime, "s")
+        self.lasttime = t()
         self.alreadystart = False
 
         # --- screen ---
@@ -76,8 +76,8 @@ class Game:
 
         while run:
 
-            time_step = time.time() - last_frame
-            last_frame = time.time()
+            time_step = t() - last_frame
+            last_frame = t()
 
             # --- Update map ---
 
@@ -125,12 +125,10 @@ class Game:
             # --- move enemies ---
 
             for x in enemy_group:
-                if int(time.time() * 100) % 100 == 0:
+                if int(t() * 100) % 100 == 0:
                     bullet_group.add(x.fire(True))
 
             # --- move bullets ---
-
-            print(player.health, enemy.health)
 
             for bullet in bullet_group:
                 bullet.run(time_step, self.camera_pos)
@@ -174,7 +172,7 @@ class Game:
 
             # --- print time for first frame ---
             if not self.alreadystart:
-                print("first frame in", time.time() - self.lasttime, "s")
+                print("first frame in", t() - self.lasttime, "s")
                 self.alreadystart = True
 
         print("quit game")
@@ -212,9 +210,9 @@ class Game:
         # finally, reduce to the screen size
 
         colormap = bigcolormap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                   cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                               cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
         maskmap = bigmaskmap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                  cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                             cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
 
         image = pygame.surfarray.make_surface(colormap)
         mask = pygame.mask.from_surface(make_surface_rgba(maskmap))
