@@ -1,5 +1,5 @@
 import pygame
-from src.physics import Dot, Force, Pos, Speed
+from src.utils.physics import Dot, Force, Pos, Speed
 
 
 class Bullet(pygame.sprite.Sprite):

@@ -1,14 +1,15 @@
 import math
 import pygame
 from src.bullet import Bullet
-from src.map_gen import Map
-from src.physics import Dot, Pos, Speed, Force
+from src.map_gen import get_map_instance
+from src.utils.physics import Dot, Pos, Speed, Force
+from src.constants import *
 
 
 class Boat(pygame.sprite.Sprite):
     boat_bot_image = pygame.image.load("assets/images/boat_bot.png")
 
-    def __init__(self, screen: pygame.Surface, map_data: Map,
+    def __init__(self, screen: pygame.Surface,
                  pos: Pos, speed: Speed, mass, max_power=1000,
                  boat_image=boat_bot_image, *groups):
         """création du bateau, orientation en radians"""
@@ -37,7 +38,7 @@ class Boat(pygame.sprite.Sprite):
         self.rect.center = (self.dot.pos.x, self.dot.pos.y)
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.map_data = map_data
+        self.map_data = get_map_instance()
 
         # game's mechanics related
         self.max_health = 100
@@ -45,13 +46,13 @@ class Boat(pygame.sprite.Sprite):
         self.bullets_damage = 5
         self.bullet_speed_norm = 300
 
-    def rotate(self, angle, time_step, map_data: Map):
+    def rotate(self, angle, time_step):
         """lorsque le bateau tourne, il conserve sa vitesse
         le bateau tourne moins vite lorsqu'il est à l'arrêt"""
 
         # bloque la rotation du bateau s'il n'est pas dans l'eau
-        height_level = map_data.get_height_pixel(self.dot.pos)
-        if height_level > map_data.sea_level:
+        height_level = self.map_data.get_height_pixel(self.dot.pos)
+        if height_level > sea_level:
             return
 
         speed_norm = self.dot.speed.get_norm()
@@ -71,7 +72,20 @@ class Boat(pygame.sprite.Sprite):
         """opérations à effectuer à chaque tick"""
         # calcul des forces en présence et application de la seconde loi de Newton
         speed_norm = self.dot.speed.get_norm()
+        height_level = self.map_data.get_height_pixel(self.dot.pos)
         resultant = self.calcul_resultante()
+
+        # block the boat in the land if it goes to
+        if height_level >= sea_level and speed_norm <= 20:
+            self.dot.speed.x = 0
+            self.dot.speed.y = 0
+            resultant = Force(0, 0)
+
+        if height_level >= sand_level:
+            self.dot.speed.x *= 0.5
+            self.dot.speed.y *= 0.5
+            resultant = Force(0, 0)
+
         self.dot.run(resultant, time_step)
 
         if speed_norm < 5 and self.engine_power < 0:
@@ -91,17 +105,6 @@ class Boat(pygame.sprite.Sprite):
         speed_norm = self.dot.speed.get_norm()
         height_level = self.map_data.get_height_pixel(self.dot.pos)
 
-        # block the boat in the land if it goes to
-        if height_level >= self.map_data.sea_level and speed_norm <= 20:
-            self.dot.speed.x = 0
-            self.dot.speed.y = 0
-            return Force(0, 0)
-
-        if height_level >= self.map_data.sand_level:
-            self.dot.speed.x *= 0.5
-            self.dot.speed.y *= 0.5
-            return Force(0, 0)
-
         # forces dépendantes de la vitesse, ainsi, pas de calcul si la vitesse est nulle donc l'orientation none
         temp_orientation = self.dot.speed.get_orientation()
         if temp_orientation is not None:
@@ -113,7 +116,7 @@ class Boat(pygame.sprite.Sprite):
                                                                                    math.sin(temp_orientation))
 
             # si le bateau est trop proche du sable, il s'enlisse
-            coeff_resistance_sand = (height_level - self.map_data.sea_level) * self.coeff_sand_friction
+            coeff_resistance_sand = (height_level - sea_level) * self.coeff_sand_friction
             if coeff_resistance_sand > 0:
                 sand_friction_force = -coeff_resistance_sand * Force(math.cos(temp_orientation),
                                                                      math.sin(temp_orientation))
@@ -148,9 +151,6 @@ class Boat(pygame.sprite.Sprite):
     def display_health(self, camera_pos: Pos):
         """affiche la barre de vie juste au dessus du bateau"""
         if self.alive():
-            black = (0, 0, 0)
-            green = (65, 225, 77)
-
             back_rect = pygame.rect.Rect(0, 0, 40, 10)
             back_rect.center = (self.dot.pos.x - camera_pos.x, self.dot.pos.y - camera_pos.y - self.rect.height / 2 - 8)
             pygame.draw.rect(self.screen, black, back_rect)

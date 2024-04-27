@@ -1,22 +1,22 @@
 from time import time as t, sleep
 import pygame
 
+from src.utils.background import get_map_bg
 from src.boat import Boat
-from src.utils import make_surface_rgba
 from src.player import Player
 from src.map_gen import *
-from src.physics import Pos, Speed
+from src.utils.physics import Pos, Speed
 
 
 class Game:
     def __init__(self, screen_size: tuple):
 
-        self.starttime = t()
+        self.start_time = t()
         print("init pygame ... ")
         pygame.display.init()
         pygame.font.init()
-        print("pygame initialized in", t() - self.starttime, "s")
-        self.alreadystart = False
+        print("pygame initialized in", t() - self.start_time, "s")
+        self.already_start = False
 
         # --- screen ---
         print("init screen")
@@ -27,7 +27,7 @@ class Game:
 
         # --- Map ---
         print("init map")
-        self.map = Map(135, 141)
+        self.map = get_map_instance()
         print("seed:", self.map.seed)
 
         # --- Camera ---
@@ -44,16 +44,16 @@ class Game:
         print("init game")
 
         # --- boats ---
-        spawnpoints = SpawnPoint(self.map)
+        spawn_points = SpawnPoint(self.map)
 
-        player = Player(self.screen, self.map, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
+        player = Player(self.screen, spawn_points.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                         mass=10, max_power=2000, boat_image=Player.boat_1_image)
 
-        enemy = Boat(self.screen, self.map, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
+        enemy = Boat(self.screen, spawn_points.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                      mass=10, max_power=2000, boat_image=Player.boat_2_image)
 
-        print("given_spawnpoints:")
-        for x in spawnpoints.given_spawnpoints:
+        print("given spawn points:")
+        for x in spawn_points.given_spawn_points:
             print("\t", x)
 
         player_group = pygame.sprite.Group()
@@ -80,7 +80,7 @@ class Game:
 
             # --- Update map ---
 
-            background = self.get_map_bg()
+            background = get_map_bg(self)
             self.screen.blit(background.image, background.rect)
             for x in player_group:
                 x.run(time_step, self.camera_pos)
@@ -117,9 +117,9 @@ class Game:
                 player.set_engine_power(0)
 
             if self.key_pressed[pygame.K_q]:
-                player.rotate(-1, time_step, self.map)
+                player.rotate(-1, time_step)
             if self.key_pressed[pygame.K_d]:
-                player.rotate(1, time_step, self.map)
+                player.rotate(1, time_step)
 
             # --- move enemies ---
 
@@ -170,9 +170,9 @@ class Game:
                         bullet_group.add(player.fire(False))
 
             # --- print time for first frame ---
-            if not self.alreadystart:
-                print("first frame after", t() - self.starttime, "s")
-                self.alreadystart = True
+            if not self.already_start:
+                print("first frame after", t() - self.start_time, "s")
+                self.already_start = True
 
             # --- block at 60fps ---
             if t() - last_frame < 1/60:
@@ -180,53 +180,3 @@ class Game:
 
         print("quit game")
         pygame.quit()
-
-    def get_map_bg(self):
-
-        cbs = Chunk.block_size
-        cam_pos = Pos(int(self.camera_pos.x), int(self.camera_pos.y))
-
-        # first, get the chunk we need to draw bg
-        chunks_needed = []
-        i = 0
-        while ((cam_pos.x + cbs * i) // cbs) * cbs < cam_pos.x + self.screen_size[0]:
-            chunks_needed.append([])
-            j = 0
-            while ((cam_pos.y + cbs * j) // cbs) * cbs < cam_pos.y + self.screen_size[1]:
-                chunks_needed[i] += [Pos(((cam_pos.x + cbs * i) // cbs) * cbs,
-                                         ((cam_pos.y + cbs * j) // cbs) * cbs)]
-                j += 1
-            i += 1
-
-        # then, make a huge map made of the chunks
-
-        bigcolormap = numpy.zeros((len(chunks_needed) * cbs, len(chunks_needed[0]) * cbs, 3), numpy.uint8)
-        bigmaskmap = numpy.zeros((len(chunks_needed) * cbs, len(chunks_needed[0]) * cbs, 4), numpy.uint8)
-
-        for i in range(len(chunks_needed)):
-            for j in range(len(chunks_needed[i])):
-                bigcolormap[i * cbs: (i + 1) * cbs, j * cbs: (j + 1) * cbs] = \
-                    self.map.get_map_block_colored(chunks_needed[i][j])
-                bigmaskmap[i * cbs: (i + 1) * cbs, j * cbs: (j + 1) * cbs] = \
-                    self.map.get_map_block_masked(chunks_needed[i][j])
-
-        # finally, reduce to the screen size
-
-        colormap = bigcolormap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                               cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
-        maskmap = bigmaskmap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                             cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
-
-        image = pygame.surfarray.make_surface(colormap)
-        mask = pygame.mask.from_surface(make_surface_rgba(maskmap))
-        rect = image.get_rect()
-        return BackGround(image, mask, rect)
-
-
-class BackGround(pygame.sprite.Sprite):
-
-    def __init__(self, image, mask, rect, *groups):
-        super().__init__(*groups)
-        self.image = image
-        self.mask = mask
-        self.rect = rect
