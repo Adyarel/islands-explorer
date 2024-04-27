@@ -1,4 +1,4 @@
-from time import time as t
+from time import time as t, sleep
 import pygame
 
 from src.boat import Boat
@@ -11,12 +11,11 @@ from src.physics import Pos, Speed
 class Game:
     def __init__(self, screen_size: tuple):
 
-        self.lasttime = t()
+        self.starttime = t()
         print("init pygame ... ")
         pygame.display.init()
         pygame.font.init()
-        print("pygame initialized in", t() - self.lasttime, "s")
-        self.lasttime = t()
+        print("pygame initialized in", t() - self.starttime, "s")
         self.alreadystart = False
 
         # --- screen ---
@@ -172,8 +171,12 @@ class Game:
 
             # --- print time for first frame ---
             if not self.alreadystart:
-                print("first frame in", t() - self.lasttime, "s")
+                print("first frame after", t() - self.starttime, "s")
                 self.alreadystart = True
+
+            # --- block at 60fps ---
+            if t() - last_frame < 1/60:
+                sleep(1/60 - t() + last_frame)
 
         print("quit game")
         pygame.quit()
