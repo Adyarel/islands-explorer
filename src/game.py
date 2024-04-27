@@ -47,10 +47,10 @@ class Game:
         # --- boats ---
         spawnpoints = SpawnPoint(self.map)
 
-        player = Player(self.screen, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
+        player = Player(self.screen, self.map, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                         mass=10, max_power=2000, boat_image=Player.boat_1_image)
 
-        enemy = Boat(self.screen, spawnpoints.get_spawn_point_near(Pos(0,0)), Speed(0, 0),
+        enemy = Boat(self.screen, self.map, spawnpoints.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                      mass=10, max_power=2000, boat_image=Player.boat_2_image)
 
         print("given_spawnpoints:")
@@ -63,6 +63,8 @@ class Game:
 
         player_group.add(player)
         enemy_group.add(enemy)
+
+        enemy.orientation = -0.8
 
         # --- start game ---
 
@@ -82,9 +84,9 @@ class Game:
             background = self.get_map_bg()
             self.screen.blit(background.image, background.rect)
             for x in player_group:
-                x.run(time_step, self.map, self.camera_pos)
+                x.run(time_step, self.camera_pos)
             for x in enemy_group:
-                x.run(time_step, self.map, self.camera_pos)
+                x.run(time_step, self.camera_pos)
 
             # --- print fps ---
 
@@ -97,14 +99,14 @@ class Game:
 
             # --- Move cam ---
 
-            if player.dot.pos.x - self.camera_pos.x < self.screen_size[0] * 13/32:
-                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 13/32
-            elif player.dot.pos.x - self.camera_pos.x > self.screen_size[0] * 19/32:
-                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 19/32
-            if player.dot.pos.y - self.camera_pos.y < self.screen_size[1] * 7/18:
-                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 7/18
-            elif player.dot.pos.y - self.camera_pos.y > self.screen_size[1] * 11/18:
-                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 11/18
+            if player.dot.pos.x - self.camera_pos.x < self.screen_size[0] * 13 / 32:
+                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 13 / 32
+            elif player.dot.pos.x - self.camera_pos.x > self.screen_size[0] * 19 / 32:
+                self.camera_pos.x = player.dot.pos.x - self.screen_size[0] * 19 / 32
+            if player.dot.pos.y - self.camera_pos.y < self.screen_size[1] * 7 / 18:
+                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 7 / 18
+            elif player.dot.pos.y - self.camera_pos.y > self.screen_size[1] * 11 / 18:
+                self.camera_pos.y = player.dot.pos.y - self.screen_size[1] * 11 / 18
 
             # --- Move boat ---
 
@@ -120,7 +122,15 @@ class Game:
             if self.key_pressed[pygame.K_d]:
                 player.rotate(1, time_step, self.map)
 
+            # --- move enemies ---
+
+            for x in enemy_group:
+                if int(time.time() * 100) % 100 == 0:
+                    bullet_group.add(x.fire(True))
+
             # --- move bullets ---
+
+            print(player.health, enemy.health)
 
             for bullet in bullet_group:
                 bullet.run(time_step, self.camera_pos)
@@ -128,13 +138,15 @@ class Game:
 
                 if pygame.sprite.spritecollide(bullet, player_group, False):
                     if pygame.sprite.spritecollide(bullet, player_group, False, pygame.sprite.collide_mask):
-                        player.take_damage(bullet.shooter_boat.bullets_damage)
-                        bullet.kill()
+                        if player_group not in pygame.sprite.Sprite.groups(bullet.shooter_boat):
+                            player.take_damage(bullet.shooter_boat.bullets_damage)
+                            bullet.kill()
 
                 if pygame.sprite.spritecollide(bullet, enemy_group, False):
                     if pygame.sprite.spritecollide(bullet, enemy_group, False, pygame.sprite.collide_mask):
-                        enemy.take_damage(bullet.shooter_boat.bullets_damage)
-                        bullet.kill()
+                        if enemy_group not in pygame.sprite.Sprite.groups(bullet.shooter_boat):
+                            enemy.take_damage(bullet.shooter_boat.bullets_damage)
+                            bullet.kill()
 
             pygame.sprite.spritecollide(background, bullet_group, True, pygame.sprite.collide_mask)
 
@@ -200,9 +212,9 @@ class Game:
         # finally, reduce to the screen size
 
         colormap = bigcolormap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                               cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                   cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
         maskmap = bigmaskmap[cam_pos.x % cbs: cam_pos.x % cbs + self.screen_size[0],
-                             cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
+                  cam_pos.y % cbs: cam_pos.y % cbs + self.screen_size[1]]
 
         image = pygame.surfarray.make_surface(colormap)
         mask = pygame.mask.from_surface(make_surface_rgba(maskmap))

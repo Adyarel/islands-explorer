@@ -8,8 +8,9 @@ from src.physics import Dot, Pos, Speed, Force
 class Boat(pygame.sprite.Sprite):
     boat_bot_image = pygame.image.load("assets/images/boat_bot.png")
 
-    def __init__(self, screen: pygame.Surface, pos: Pos, speed: Speed, mass, max_power=1000, boat_image=boat_bot_image,
-                 *groups):
+    def __init__(self, screen: pygame.Surface, map_data: Map,
+                 pos: Pos, speed: Speed, mass, max_power=1000,
+                 boat_image=boat_bot_image, *groups):
         """création du bateau, orientation en radians"""
 
         super().__init__(*groups)
@@ -35,6 +36,8 @@ class Boat(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.dot.pos.x, self.dot.pos.y)
         self.mask = pygame.mask.from_surface(self.image)
+
+        self.map_data = map_data
 
         # game's mechanics related
         self.max_health = 100
@@ -64,11 +67,11 @@ class Boat(pygame.sprite.Sprite):
         if - self.max_power <= power <= self.max_power:
             self.engine_power = power
 
-    def run(self, time_step, map_data: Map, camera_pos: Pos):
+    def run(self, time_step, camera_pos: Pos):
         """opérations à effectuer à chaque tick"""
         # calcul des forces en présence et application de la seconde loi de Newton
         speed_norm = self.dot.speed.get_norm()
-        resultant = self.calcul_resultante(map_data)
+        resultant = self.calcul_resultante()
         self.dot.run(resultant, time_step)
 
         if speed_norm < 5 and self.engine_power < 0:
@@ -80,21 +83,21 @@ class Boat(pygame.sprite.Sprite):
         self.screen.blit(self.image, self.rect)
         self.display_health(camera_pos)
 
-    def calcul_resultante(self, map_data):
+    def calcul_resultante(self):
         """calcul des forces à appliquer au bateau"""
         sand_friction_force = Force(0, 0)
         water_friction_force = Force(0, 0)
 
         speed_norm = self.dot.speed.get_norm()
-        height_level = map_data.get_height_pixel(self.dot.pos)
+        height_level = self.map_data.get_height_pixel(self.dot.pos)
 
         # block the boat in the land if it goes to
-        if height_level >= map_data.sea_level and speed_norm <= 20:
+        if height_level >= self.map_data.sea_level and speed_norm <= 20:
             self.dot.speed.x = 0
             self.dot.speed.y = 0
             return Force(0, 0)
 
-        if height_level >= map_data.sand_level:
+        if height_level >= self.map_data.sand_level:
             self.dot.speed.x *= 0.5
             self.dot.speed.y *= 0.5
             return Force(0, 0)
@@ -110,7 +113,7 @@ class Boat(pygame.sprite.Sprite):
                                                                                    math.sin(temp_orientation))
 
             # si le bateau est trop proche du sable, il s'enlisse
-            coeff_resistance_sand = (height_level - map_data.sea_level) * self.coeff_sand_friction
+            coeff_resistance_sand = (height_level - self.map_data.sea_level) * self.coeff_sand_friction
             if coeff_resistance_sand > 0:
                 sand_friction_force = -coeff_resistance_sand * Force(math.cos(temp_orientation),
                                                                      math.sin(temp_orientation))
