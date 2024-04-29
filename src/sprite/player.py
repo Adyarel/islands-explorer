@@ -1,5 +1,5 @@
 import pygame
-from src.boat import Boat
+from src.sprite.boat import Boat
 from src.utils.physics import Speed, Pos
 
 

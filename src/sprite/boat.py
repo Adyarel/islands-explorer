@@ -1,9 +1,8 @@
 import math
-from typing import Tuple
 
 import pygame
-from src.bullet import Bullet
-from src.Gmap import get_map_instance
+from src.sprite.bullet import Bullet
+from src.terrain.Gmap import get_map_instance
 from src.utils.physics import Dot, Pos, Speed, Force
 from src.constants import *
 

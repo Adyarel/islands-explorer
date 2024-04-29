@@ -1,11 +1,11 @@
 from time import time as t, sleep
 import pygame
 
-from src.Gmap import get_map_instance, Gmap
-from src.spawn_point import SpawnPoint
+from src.terrain.Gmap import get_map_instance, Gmap
+from src.terrain.spawn_point import SpawnPoint
 from src.utils.background import get_map_bg, BackGround
-from src.boat import Boat
-from src.player import Player
+from src.sprite.boat import Boat
+from src.sprite.player import Player
 from src.utils.physics import Pos, Speed
 
 

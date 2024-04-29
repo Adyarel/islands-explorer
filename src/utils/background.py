@@ -1,8 +1,7 @@
 import pygame
-import numpy
 
 from src.constants import *
-from src.Gmap import Gmap
+from src.terrain.Gmap import Gmap
 from src.utils.physics import Pos
 from src.utils.utils import get_starting_pos_chunk
 

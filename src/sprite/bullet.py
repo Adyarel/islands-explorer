@@ -21,7 +21,10 @@ class Bullet(pygame.sprite.Sprite):
     def run(self, time_step, camera_pos: Pos) -> None:
         """opérations à effectuer à chaque tick"""
         self.dot.run(Force(0, 0), time_step)
-        self.rect.center = (self.dot.pos.x - camera_pos.x, self.dot.pos.y - camera_pos.y)
+        try:
+            self.rect.center = (self.dot.pos.x - camera_pos.x, self.dot.pos.y - camera_pos.y)
+        except TypeError as exception:
+            print(exception, "\n", exception.args)
 
     def __str__(self) -> str:
         return str(self.__class__) + ": \n" \

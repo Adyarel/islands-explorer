@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy
 
-from src.chunk import Chunk
+from src.terrain.chunk import Chunk
 from src.constants import deepsea_level, sea_level, sand_level, grass_level, color_deep_sea, color_sea, color_sand, \
     color_grass, color_dirt, chunk_block_size
 from src.utils.physics import Pos
@@ -75,20 +75,20 @@ class Gmap:
 
     # --- full chunk related ---
 
-    def get_map_block_colored(self, block_starting_pos: Pos) -> numpy.ndarray:
-        if not block_starting_pos.get_tuple() in self.map_blocks:
-            self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
-        return self.map_blocks[block_starting_pos.get_tuple()].colored_map
+    def get_map_block_colored(self, starting_pos: Pos) -> numpy.ndarray:
+        if not self.is_chunk_exist(starting_pos):
+            self.map_blocks[starting_pos.get_tuple()] = Chunk(starting_pos, self)
+        return self.map_blocks[starting_pos.get_tuple()].colored_map
 
-    def get_map_block_masked(self, block_starting_pos: Pos) -> numpy.ndarray:
-        if not block_starting_pos.get_tuple() in self.map_blocks:
-            self.map_blocks[block_starting_pos.get_tuple()] = Chunk(block_starting_pos, self)
-        return self.map_blocks[block_starting_pos.get_tuple()].mask_map
+    def get_map_block_masked(self, starting_pos: Pos) -> numpy.ndarray:
+        if not self.is_chunk_exist(starting_pos):
+            self.map_blocks[starting_pos.get_tuple()] = Chunk(starting_pos, self)
+        return self.map_blocks[starting_pos.get_tuple()].mask_map
 
     # --- pixel related ---
     def get_height_pixel(self, pos: Pos) -> int:
         starting_pos = get_starting_pos_chunk(pos)
-        if not starting_pos.get_tuple() in self.map_blocks:
+        if not self.is_chunk_exist(starting_pos):
             self.map_blocks[starting_pos.get_tuple()] = Chunk(starting_pos, self)
         chunk = self.map_blocks[starting_pos.get_tuple()]
         return chunk.height_map[int(pos.x % chunk_block_size), int(pos.y % chunk_block_size)]
