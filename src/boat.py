@@ -1,7 +1,9 @@
 import math
+from typing import Tuple
+
 import pygame
 from src.bullet import Bullet
-from src.map_gen import get_map_instance
+from src.Gmap import get_map_instance
 from src.utils.physics import Dot, Pos, Speed, Force
 from src.constants import *
 
@@ -9,53 +11,53 @@ from src.constants import *
 class Boat(pygame.sprite.Sprite):
     boat_bot_image = pygame.image.load("assets/images/boat_bot.png")
 
-    def __init__(self, screen: pygame.Surface,
-                 pos: Pos, speed: Speed, mass, max_power=1000,
-                 boat_image=boat_bot_image, *groups):
+    def __init__(self, screen: pygame.surface.Surface,
+                 pos: Pos, speed: Speed, mass: float, max_power: float = 1000,
+                 boat_image: pygame.surface.Surface = boat_bot_image, *groups):
         """création du bateau, orientation en radians"""
 
         super().__init__(*groups)
 
         # boat's mechanics constants
-        self.max_power = max_power
-        self.coeff_water_friction = 5
-        self.coeff_sand_friction = 3000
-        self.coeff_swivel = 1e-3
+        self.max_power: float = max_power
+        self.coeff_water_friction: float = 5
+        self.coeff_sand_friction: float = 3000
+        self.coeff_swivel: float = 1e-3
 
         # boat's mechanics related
-        self.engine_power = 0
-        self.dot = Dot(pos, speed, mass)
-        self.orientation = self.dot.speed.get_orientation()
+        self.engine_power: float = 0
+        self.dot: Dot = Dot(pos, speed, mass)
+        self.orientation: float = self.dot.speed.get_orientation()
         if self.orientation is None:
             self.orientation = 0
 
         # pygame's related
-        self.screen = screen
-        self.size_image = (48, 16)
-        self.base_image = pygame.transform.scale(boat_image, self.size_image)
-        self.image = self.base_image
-        self.rect = self.image.get_rect()
+        self.screen: pygame.surface.Surface = screen
+        self.size_image: Tuple[int, int] = (48, 16)
+        self.base_image: pygame.surface.Surface = pygame.transform.scale(boat_image, self.size_image)
+        self.image: pygame.surface.Surface = self.base_image
+        self.rect: pygame.rect.Rect = self.image.get_rect()
         self.rect.center = (self.dot.pos.x, self.dot.pos.y)
-        self.mask = pygame.mask.from_surface(self.image)
+        self.mask: pygame.mask.Mask = pygame.mask.from_surface(self.image)
 
         self.map_data = get_map_instance()
 
         # game's mechanics related
-        self.max_health = 100
-        self.health = self.max_health
-        self.bullets_damage = 5
-        self.bullet_speed_norm = 300
+        self.max_health: float = 100
+        self.health: float = self.max_health
+        self.bullets_damage: float = 5
+        self.bullet_speed_norm: float = 300
 
-    def rotate(self, angle, time_step):
+    def rotate(self, angle: float, time_step: float) -> None:
         """lorsque le bateau tourne, il conserve sa vitesse
         le bateau tourne moins vite lorsqu'il est à l'arrêt"""
 
         # bloque la rotation du bateau s'il n'est pas dans l'eau
-        height_level = self.map_data.get_height_pixel(self.dot.pos)
+        height_level: int = self.map_data.get_height_pixel(self.dot.pos)
         if height_level > sea_level:
             return
 
-        speed_norm = self.dot.speed.get_norm()
+        speed_norm: float = self.dot.speed.get_norm()
         if speed_norm != 0:
             self.orientation += angle * time_step
         else:
@@ -63,17 +65,17 @@ class Boat(pygame.sprite.Sprite):
         self.dot.speed.x = math.cos(self.orientation) * speed_norm * (1 - self.coeff_swivel * abs(angle))
         self.dot.speed.y = math.sin(self.orientation) * speed_norm * (1 - self.coeff_swivel * abs(angle))
 
-    def set_engine_power(self, power):
+    def set_engine_power(self, power: float) -> None:
         """régulateur sur la puissance afin de ne pas dépasser le max"""
         if - self.max_power <= power <= self.max_power:
             self.engine_power = power
 
-    def run(self, time_step, camera_pos: Pos):
+    def run(self, time_step: float, camera_pos: Pos) -> None:
         """opérations à effectuer à chaque tick"""
         # calcul des forces en présence et application de la seconde loi de Newton
-        speed_norm = self.dot.speed.get_norm()
-        height_level = self.map_data.get_height_pixel(self.dot.pos)
-        resultant = self.calcul_resultante()
+        speed_norm: float = self.dot.speed.get_norm()
+        height_level: int = self.map_data.get_height_pixel(self.dot.pos)
+        resultant: Force = self.calcul_resultante()
 
         # block the boat in the land if it goes to
         if height_level >= sea_level and speed_norm <= 20:
@@ -97,16 +99,16 @@ class Boat(pygame.sprite.Sprite):
         self.screen.blit(self.image, self.rect)
         self.display_health(camera_pos)
 
-    def calcul_resultante(self):
+    def calcul_resultante(self) -> Force:
         """calcul des forces à appliquer au bateau"""
-        sand_friction_force = Force(0, 0)
-        water_friction_force = Force(0, 0)
+        sand_friction_force: Force = Force(0, 0)
+        water_friction_force: Force = Force(0, 0)
 
-        speed_norm = self.dot.speed.get_norm()
-        height_level = self.map_data.get_height_pixel(self.dot.pos)
+        speed_norm: float = self.dot.speed.get_norm()
+        height_level: float = self.map_data.get_height_pixel(self.dot.pos)
 
         # forces dépendantes de la vitesse, ainsi, pas de calcul si la vitesse est nulle donc l'orientation none
-        temp_orientation = self.dot.speed.get_orientation()
+        temp_orientation: float = self.dot.speed.get_orientation()
         if temp_orientation is not None:
             if temp_orientation % math.pi != self.orientation % math.pi:
                 if speed_norm > 1:
@@ -122,8 +124,8 @@ class Boat(pygame.sprite.Sprite):
                                                                      math.sin(temp_orientation))
 
         # force motrice
-        engine_force = self.engine_power * Force(math.cos(self.orientation),
-                                                 math.sin(self.orientation))
+        engine_force: Force = self.engine_power * Force(math.cos(self.orientation),
+                                                        math.sin(self.orientation))
 
         return engine_force + water_friction_force + sand_friction_force
 
@@ -135,10 +137,10 @@ class Boat(pygame.sprite.Sprite):
         else:
             bullet_speed = self.bullet_speed_norm * Speed(math.cos(self.orientation + math.pi / 2),
                                                           math.sin(self.orientation + math.pi / 2))
-        bullet = Bullet(self.screen, self, Pos(self.dot.pos.x, self.dot.pos.y), bullet_speed)
+        bullet: Bullet = Bullet(self.screen, self, Pos(self.dot.pos.x, self.dot.pos.y), bullet_speed)
         return bullet
 
-    def take_damage(self, damage_points):
+    def take_damage(self, damage_points: float) -> None:
         self.health -= damage_points
         if not self.is_still_alive():
             self.kill()
@@ -148,7 +150,7 @@ class Boat(pygame.sprite.Sprite):
             return False
         return True
 
-    def display_health(self, camera_pos: Pos):
+    def display_health(self, camera_pos: Pos) -> None:
         """affiche la barre de vie juste au dessus du bateau"""
         if self.alive():
             back_rect = pygame.rect.Rect(0, 0, 40, 10)

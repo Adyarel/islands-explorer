@@ -1,10 +1,11 @@
 from time import time as t, sleep
 import pygame
 
+from src.Gmap import get_map_instance, Gmap
+from src.spawn_point import SpawnPoint
 from src.utils.background import get_map_bg
 from src.boat import Boat
 from src.player import Player
-from src.map_gen import *
 from src.utils.physics import Pos, Speed
 
 
@@ -25,9 +26,9 @@ class Game:
         pygame.display.set_caption("Island Explorer", "island-explorer-icon")
         pygame.display.set_icon(pygame.image.load("assets/icon.png"))
 
-        # --- Map ---
+        # --- Gmap ---
         print("init map")
-        self.map = get_map_instance()
+        self.map: Gmap = get_map_instance()
         print("seed:", self.map.seed)
 
         # --- Camera ---
