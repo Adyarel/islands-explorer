@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy
 
-# --- map ---
+# --- gmap ---
 deepsea_level: int = 114
 sea_level: int = 136
 sand_level: int = 140

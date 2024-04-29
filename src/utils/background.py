@@ -32,7 +32,7 @@ def get_map_bg(game) -> BackGround:
             j += 1
         i += 1
 
-    # then, make a huge map made of the chunks
+    # then, make a huge gmap made of the chunks
 
     big_color_map: numpy.ndarray = numpy.zeros((len(chunks_needed) * cbs, len(chunks_needed[0]) * cbs, 3), numpy.uint8)
     big_mask_map: numpy.ndarray = numpy.zeros((len(chunks_needed) * cbs, len(chunks_needed[0]) * cbs, 4), numpy.uint8)
@@ -40,9 +40,9 @@ def get_map_bg(game) -> BackGround:
     for i in range(len(chunks_needed)):
         for j in range(len(chunks_needed[i])):
             big_color_map[i * cbs: (i + 1) * cbs, j * cbs: (j + 1) * cbs] = \
-                game.map.get_map_block_colored(chunks_needed[i][j])
+                game.gmap.get_map_block_colored(chunks_needed[i][j])
             big_mask_map[i * cbs: (i + 1) * cbs, j * cbs: (j + 1) * cbs] = \
-                game.map.get_map_block_masked(chunks_needed[i][j])
+                game.gmap.get_map_block_masked(chunks_needed[i][j])
 
     # finally, reduce to the screen size
 

@@ -3,16 +3,16 @@ import pygame
 
 from src.Gmap import get_map_instance, Gmap
 from src.spawn_point import SpawnPoint
-from src.utils.background import get_map_bg
+from src.utils.background import get_map_bg, BackGround
 from src.boat import Boat
 from src.player import Player
 from src.utils.physics import Pos, Speed
 
 
 class Game:
-    def __init__(self, screen_size: tuple):
+    def __init__(self, screen_size: tuple[int, int]):
 
-        self.start_time = t()
+        self.start_time: float = t()
         print("init pygame ... ")
         pygame.display.init()
         pygame.font.init()
@@ -21,31 +21,31 @@ class Game:
 
         # --- screen ---
         print("init screen")
-        self.screen_size = screen_size
-        self.screen = pygame.display.set_mode(self.screen_size)
+        self.screen_size: tuple[int, int] = screen_size
+        self.screen: pygame.surface.Surface = pygame.display.set_mode(self.screen_size)
         pygame.display.set_caption("Island Explorer", "island-explorer-icon")
         pygame.display.set_icon(pygame.image.load("assets/icon.png"))
 
         # --- Gmap ---
-        print("init map")
-        self.map: Gmap = get_map_instance()
-        print("seed:", self.map.seed)
+        print("init gmap")
+        self.gmap: Gmap = get_map_instance()
+        print("seed:", self.gmap.seed)
 
         # --- Camera ---
-        self.camera_pos = Pos(0, 0)
+        self.camera_pos: Pos = Pos(0, 0)
 
         # --- inputs ---
-        self.key_pressed = {pygame.K_z: False,
-                            pygame.K_q: False,
-                            pygame.K_s: False,
-                            pygame.K_d: False}
+        self.key_pressed: dict[int, bool] = {pygame.K_z: False,
+                                             pygame.K_q: False,
+                                             pygame.K_s: False,
+                                             pygame.K_d: False}
 
     def run(self):
 
         print("init game")
 
         # --- boats ---
-        spawn_points = SpawnPoint(self.map)
+        spawn_points = SpawnPoint(self.gmap)
 
         player = Player(self.screen, spawn_points.get_spawn_point_near(Pos(0, 0)), Speed(0, 0),
                         mass=10, max_power=2000, boat_image=Player.boat_1_image)
@@ -68,9 +68,10 @@ class Game:
 
         # --- start game ---
 
-        self.camera_pos = player.dot.pos - Pos(self.screen_size[0] / 2, self.screen_size[1] / 2)
+        self.camera_pos: Pos = player.dot.pos - Pos(self.screen_size[0] / 2, self.screen_size[1] / 2)
 
-        last_frame = 0
+        last_frame: float = 0
+        chunks_counter: int = 0
 
         run = True
 
@@ -79,9 +80,9 @@ class Game:
             time_step = t() - last_frame
             last_frame = t()
 
-            # --- Update map ---
+            # --- Update gmap ---
 
-            background = get_map_bg(self)
+            background: BackGround = get_map_bg(self)
             self.screen.blit(background.image, background.rect)
             for x in player_group:
                 x.run(time_step, self.camera_pos)
@@ -91,10 +92,10 @@ class Game:
             # --- print fps ---
 
             font = pygame.font.Font(None, 24)
-            fps_value = 0
+            fps_value: int = 0
             if time_step != 0:
-                fps_value = 1 / time_step
-            text = font.render("FPS: " + str(int(fps_value)), 1, (255, 255, 255))
+                fps_value = int(1 / time_step)
+            text = font.render("FPS: " + str(fps_value), 1, (255, 255, 255))
             self.screen.blit(text, (0, 0))
 
             # --- Move cam ---
@@ -175,9 +176,15 @@ class Game:
                 print("first frame after", t() - self.start_time, "s")
                 self.already_start = True
 
+            # --- print time for generating new chunks
+            if len(self.gmap.map_blocks) != chunks_counter:
+                print(len(self.gmap.map_blocks) - chunks_counter, "new chunks generated in", t() - last_frame, "s")
+                print(len(self.gmap.map_blocks), "chunks already generated")
+                chunks_counter = len(self.gmap.map_blocks)
+
             # --- block at 60fps ---
-            if t() - last_frame < 1/60:
-                sleep(1/60 - t() + last_frame)
+            if t() - last_frame < 1 / 60:
+                sleep(1 / 60 - t() + last_frame)
 
         print("quit game")
         pygame.quit()

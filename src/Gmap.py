@@ -11,7 +11,7 @@ from src.utils.utils import get_starting_pos_chunk
 
 
 class Gmap:
-    """class to regroup the block of map """
+    """class to regroup the block of gmap """
 
     def __init__(self, seed=0):
         """DON'T CALL THE CONSTRUCTOR, call get_map_instance instead"""
